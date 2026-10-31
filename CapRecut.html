@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>CapRecut — Modern Video Descrambler & MP4 Recovery</title>
 <meta name="description" content="Repair XOR-scrambled, corrupt, or damaged MP4 video files directly in your browser. 100% private, client-side recovery.">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; media-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'none';">
 <link rel="icon" type="image/x-icon" href="favicon.ico">
 <link rel="icon" type="image/png" sizes="192x192" href="favicon-192.png">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
@@ -1291,7 +1292,29 @@ window.addEventListener("drop", e => {
 });
 
 async function load(f) {
-  name = f.name || "video.mp4";
+  if (!f) return;
+  
+  // 1. Guard against Client-Side Heap DoS / OOM crashes
+  const MAX_BROWSER_SIZE = 2 * 1024 * 1024 * 1024; // 2 GB limit
+  if (f.size > MAX_BROWSER_SIZE) {
+    setStatus("File exceeds in-browser 2 GB memory limit (" + fmt(f.size) + "). Use caprecut_capcut.py for unlimited file sizes.", "bad");
+    log("ERROR: File size " + fmt(f.size) + " exceeds browser memory limit (2 GB).");
+    return;
+  }
+
+  // 2. Prevent memory leak: Revoke previous video blob URL and reset player
+  if (url) {
+    URL.revokeObjectURL(url);
+    url = null;
+  }
+  repaired = null;
+  const v = $("vid");
+  if (v) {
+    v.removeAttribute("src");
+    v.load();
+  }
+
+  name = (f.name || "video.mp4").replace(/[/\\?%*:|"<>]/g, "_");
   fileName.textContent = name;
   $("fileinfo").textContent = "Reading " + name + " (" + fmt(f.size) + ")…";
   fileBar.classList.add("active");
@@ -1299,7 +1322,13 @@ async function load(f) {
   try {
     orig = new Uint8Array(await f.arrayBuffer());
   } catch (e) {
-    $("fileinfo").textContent = "Couldn’t read that file: " + e.message;
+    const isOom = e instanceof RangeError || (e.message && e.message.includes("allocation"));
+    const errMsg = isOom
+      ? "Browser ran out of memory allocating " + fmt(f.size) + ". Use the Python CLI for large files."
+      : "Couldn’t read that file: " + e.message;
+    $("fileinfo").textContent = errMsg;
+    setStatus(errMsg, "bad");
+    log("Read error: " + e.message);
     return;
   }
 
@@ -1437,7 +1466,8 @@ $("detect").onclick = detect;
 // ---------- MP4 box parser ----------
 function topLevelWalk(b) {
   let p = 0, n = b.length, boxes = [];
-  while (p + 8 <= n) {
+  const maxBoxes = 500;
+  while (p + 8 <= n && boxes.length < maxBoxes) {
     let s = ((b[p] << 24) | (b[p + 1] << 16) | (b[p + 2] << 8) | b[p + 3]) >>> 0;
     const t = tag(b, p + 4);
     if (!/^[\x20-\x7e]{4}$/.test(t)) return { ok: false, boxes };
@@ -1446,7 +1476,7 @@ function topLevelWalk(b) {
       s = Number(new DataView(b.buffer, b.byteOffset + p + 8, 8).getBigUint64(0));
     }
     if (s === 0) s = n - p;
-    if (s < 8 || p + s > n) return { ok: false, boxes };
+    if (s < 8 || p + s > n || !Number.isSafeInteger(s)) return { ok: false, boxes };
     boxes.push(t);
     p += s;
   }
@@ -1455,10 +1485,15 @@ function topLevelWalk(b) {
 
 // ---------- repair execution ----------
 async function repair() {
+  if (!orig || orig.length === 0) {
+    setStatus("Please load a video file first.", "bad");
+    return;
+  }
   const rawKey = $("key").value.replace(/^0x/i, "");
-  const k = parseInt(rawKey, 16), P = +$("period").value, L = +$("len").value, off = +$("off").value || 0;
-  if (isNaN(k) || !(k >= 0 && k < 256) || !(P > 0) || !(L > 0)) {
-    setStatus("Enter a valid key (00-FF), repeat period and scrambled length.", "bad");
+  const k = parseInt(rawKey, 16), P = Math.floor(+$("period").value), L = Math.floor(+$("len").value);
+  const off = Math.max(0, Math.floor(+$("off").value) || 0);
+  if (isNaN(k) || !(k >= 0 && k < 256) || !(P >= 4) || !(L >= 1) || L > P) {
+    setStatus("Enter a valid key (00-FF), repeat period (>=4), and scrambled length (1 to period).", "bad");
     return;
   }
   
@@ -1519,7 +1554,8 @@ $("repair").onclick = repair;
 // ---------- save / download ----------
 $("save").onclick = async () => {
   if (!repaired) return;
-  const out = name.replace(/\.[^.]+$/, "") + "_CapRecut.mp4";
+  const safeName = (name || "video.mp4").replace(/[/\\?%*:|"<>]/g, "_").replace(/\.\.+/g, ".");
+  const out = safeName.replace(/\.[^.]+$/, "") + "_CapRecut.mp4";
   
   try {
     // 1. Claude artifact environment support if available
