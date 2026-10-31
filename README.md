@@ -78,3 +78,4 @@ Or use the batch launcher `CapRecut-CapCut.bat`.
 
 ## 🔒 Privacy
 All repairs are performed 100% locally on your machine. Neither the CLI nor `CapRecut.html` transmits any files or telemetry to external servers.
+
