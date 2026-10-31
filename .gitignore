@@ -1,0 +1,27 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Temporary and backup files
+*.tmp
+*.bak
+*.swp
+
+# Video and test files (prevent large media files from being committed)
+*.mp4
+*.mov
+*.m4v
+*.avi
+*.mkv
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# IDE / Editor folders
+.vscode/
+.idea/
