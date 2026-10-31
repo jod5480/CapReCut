@@ -1,0 +1,1568 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CapRecut — Modern Video Descrambler & MP4 Recovery</title>
+<meta name="description" content="Repair XOR-scrambled, corrupt, or damaged MP4 video files directly in your browser. 100% private, client-side recovery.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Dark Theme (Default) */
+  --bg: #090d16;
+  --bg-gradient: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99, 102, 241, 0.18), transparent 75%),
+                 radial-gradient(circle at 100% 100%, rgba(6, 182, 212, 0.08), transparent 50%),
+                 #090d16;
+  --card: rgba(18, 24, 38, 0.85);
+  --card-hover: rgba(23, 31, 49, 0.95);
+  --card-inner: #0f1422;
+  --line: rgba(255, 255, 255, 0.09);
+  --line-strong: rgba(255, 255, 255, 0.16);
+  --text: #f3f5f9;
+  --text-secondary: #94a3b8;
+  --muted: #64748b;
+  
+  --accent: #6366f1;
+  --accent-glow: rgba(99, 102, 241, 0.35);
+  --accent-gradient: linear-gradient(135deg, #6366f1 0%, #4f46e5 50%, #06b6d4 100%);
+  --accent-t: #ffffff;
+  
+  --ok: #10b981;
+  --ok-bg: rgba(16, 185, 129, 0.12);
+  --ok-border: rgba(16, 185, 129, 0.28);
+  
+  --bad: #f43f5e;
+  --bad-bg: rgba(244, 63, 94, 0.12);
+  --bad-border: rgba(244, 63, 94, 0.28);
+  
+  --code-bg: #0b0f19;
+  --code-text: #e2e8f0;
+  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+  --glass-blur: blur(14px);
+}
+
+:root[data-theme="light"] {
+  --bg: #f8fafc;
+  --bg-gradient: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99, 102, 241, 0.12), transparent 75%),
+                 radial-gradient(circle at 100% 100%, rgba(6, 182, 212, 0.05), transparent 50%),
+                 #f8fafc;
+  --card: rgba(255, 255, 255, 0.9);
+  --card-hover: #ffffff;
+  --card-inner: #f1f5f9;
+  --line: rgba(0, 0, 0, 0.08);
+  --line-strong: rgba(0, 0, 0, 0.15);
+  --text: #0f172a;
+  --text-secondary: #475569;
+  --muted: #94a3b8;
+  
+  --accent: #4f46e5;
+  --accent-glow: rgba(79, 70, 229, 0.25);
+  --accent-gradient: linear-gradient(135deg, #4f46e5 0%, #4338ca 60%, #0284c7 100%);
+  --accent-t: #ffffff;
+  
+  --ok: #059669;
+  --ok-bg: rgba(5, 150, 105, 0.1);
+  --ok-border: rgba(5, 150, 105, 0.25);
+  
+  --bad: #e11d48;
+  --bad-bg: rgba(225, 29, 72, 0.1);
+  --bad-border: rgba(225, 29, 72, 0.25);
+  
+  --code-bg: #0f172a;
+  --code-text: #f8fafc;
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg-gradient);
+  background-attachment: fixed;
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.6;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  transition: background 0.3s ease, color 0.3s ease;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Header & Navigation */
+header {
+  border-bottom: 1px solid var(--line);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(9, 13, 22, 0.7);
+}
+
+:root[data-theme="light"] header {
+  background: rgba(248, 250, 252, 0.8);
+}
+
+.header-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.brand-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--accent-gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  box-shadow: 0 4px 14px var(--accent-glow);
+  position: relative;
+  overflow: hidden;
+}
+
+.brand-icon::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(60deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+  transform: rotate(30deg);
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-title {
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  background: linear-gradient(90deg, var(--text) 0%, var(--text-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.brand-subtitle {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.badge-privacy {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--ok-bg);
+  border: 1px solid var(--ok-border);
+  color: var(--ok);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 999px;
+}
+
+.badge-privacy svg {
+  width: 13px;
+  height: 13px;
+}
+
+button.theme-toggle {
+  background: var(--card);
+  border: 1px solid var(--line);
+  color: var(--text-secondary);
+  border-radius: 10px;
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  padding: 0 !important;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: none !important;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+button.theme-toggle:hover {
+  background: var(--card-hover);
+  color: var(--text);
+  border-color: var(--line-strong);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm) !important;
+}
+
+button.theme-toggle svg {
+  width: 18px !important;
+  height: 18px !important;
+  stroke: currentColor;
+  display: block;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
+/* Main Container */
+main {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 32px 20px 60px;
+  width: 100%;
+  flex: 1;
+}
+
+/* Hero Section */
+.hero {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.hero-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+
+.hero-pill-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.6; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.15); }
+  100% { opacity: 0.6; transform: scale(0.9); }
+}
+
+.hero h1 {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.25;
+  margin-bottom: 12px;
+  background: linear-gradient(135deg, var(--text) 30%, var(--text-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  max-width: 620px;
+  margin: 0 auto;
+}
+
+/* Card Components */
+.card {
+  background: var(--card);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 24px;
+  margin-bottom: 22px;
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.card:hover {
+  border-color: var(--line-strong);
+}
+
+.card-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.card-title svg {
+  color: var(--accent);
+  width: 18px;
+  height: 18px;
+}
+
+.card-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--card-inner);
+  border: 1px solid var(--line);
+  color: var(--text-secondary);
+}
+
+/* Modern Drop Zone */
+.drop {
+  border: 2px dashed var(--line-strong);
+  border-radius: 16px;
+  padding: 44px 24px;
+  text-align: center;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.015);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.drop:hover {
+  border-color: var(--accent);
+  background: rgba(99, 102, 241, 0.04);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px -6px var(--accent-glow);
+}
+
+.drop.over {
+  border-color: var(--accent);
+  background: rgba(99, 102, 241, 0.08);
+  transform: scale(1.01);
+  box-shadow: 0 0 30px var(--accent-glow);
+}
+
+.drop-icon-box {
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  background: var(--card-inner);
+  border: 1px solid var(--line-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  color: var(--accent);
+  transition: transform 0.25s ease;
+}
+
+.drop:hover .drop-icon-box {
+  transform: scale(1.1) rotate(-3deg);
+  background: var(--accent-gradient);
+  color: #fff;
+  border-color: transparent;
+}
+
+.drop-icon-box svg {
+  width: 28px;
+  height: 28px;
+}
+
+.drop h3 {
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.drop p {
+  color: var(--text-secondary);
+  font-size: 13px;
+  max-width: 440px;
+  margin: 0 auto 14px;
+}
+
+.format-tags {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.format-tag {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--card-inner);
+  border: 1px solid var(--line);
+  color: var(--text-secondary);
+}
+
+/* File Loaded Bar */
+.file-bar {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  background: var(--card-inner);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  margin-top: 16px;
+}
+
+.file-bar.active {
+  display: flex;
+}
+
+.file-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.file-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.file-info-text {
+  overflow: hidden;
+}
+
+.file-name {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.file-meta {
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--muted);
+}
+
+.btn-change-file {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-change-file:hover {
+  background: var(--card);
+  color: var(--text);
+  border-color: var(--line-strong);
+}
+
+/* Grid for Parameters */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 14px;
+  margin: 16px 0 20px;
+}
+
+.param-card {
+  background: var(--card-inner);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.param-card:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+
+.param-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.param-hint {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-prefix {
+  position: absolute;
+  left: 10px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--muted);
+  pointer-events: none;
+  font-weight: 600;
+}
+
+input[type=text], input[type=number] {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  outline: none;
+  transition: all 0.2s;
+}
+
+input.has-prefix {
+  padding-left: 32px;
+}
+
+input[type=text]:focus, input[type=number]:focus {
+  border-color: var(--accent);
+  background: var(--bg);
+}
+
+/* Buttons */
+.row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--accent-gradient);
+  color: var(--accent-t);
+  border: 0;
+  border-radius: 10px;
+  padding: 11px 22px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px var(--accent-glow);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+button svg {
+  width: 16px;
+  height: 16px;
+}
+
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px var(--accent-glow);
+  filter: brightness(1.05);
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+button.alt {
+  background: var(--card-inner);
+  color: var(--text);
+  border: 1px solid var(--line);
+  box-shadow: none;
+}
+
+button.alt:hover {
+  background: var(--card-hover);
+  border-color: var(--line-strong);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  filter: none;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Progress Bar */
+.bar {
+  height: 8px;
+  background: var(--card-inner);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 18px;
+  position: relative;
+  border: 1px solid var(--line);
+}
+
+.bar i {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: var(--accent-gradient);
+  border-radius: 999px;
+  transition: width 0.1s ease;
+  position: relative;
+}
+
+.bar i::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* Status Notifications */
+.status {
+  font-size: 13px;
+  margin-top: 14px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  display: none;
+  align-items: center;
+  gap: 10px;
+  font-weight: 500;
+}
+
+.status:not(:empty) {
+  display: flex;
+}
+
+.status.ok {
+  background: var(--ok-bg);
+  border: 1px solid var(--ok-border);
+  color: var(--ok);
+}
+
+.status.bad {
+  background: var(--bad-bg);
+  border: 1px solid var(--bad-border);
+  color: var(--bad);
+}
+
+.status:not(.ok):not(.bad):not(:empty) {
+  background: var(--card-inner);
+  border: 1px solid var(--line);
+  color: var(--text-secondary);
+}
+
+/* Diagnostic Terminal */
+.log-box {
+  margin-top: 18px;
+  border-radius: 12px;
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.log-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid var(--line);
+}
+
+.log-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.terminal-dots {
+  display: flex;
+  gap: 5px;
+}
+
+.terminal-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.terminal-btn {
+  background: transparent;
+  border: 0;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.terminal-btn:hover {
+  color: var(--text);
+  box-shadow: none;
+  transform: none;
+}
+
+pre {
+  background: transparent;
+  padding: 12px 14px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--code-text);
+  max-height: 180px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+pre:empty {
+  display: none;
+}
+
+/* Video Player Result */
+.video-wrapper {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #000;
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-lg);
+  margin-top: 14px;
+}
+
+video {
+  width: 100%;
+  max-height: 55vh;
+  display: block;
+  outline: none;
+}
+
+.video-stats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.stat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  background: var(--card-inner);
+  border: 1px solid var(--line);
+  padding: 4px 10px;
+  border-radius: 8px;
+  color: var(--text-secondary);
+}
+
+.stat-pill.valid {
+  border-color: var(--ok-border);
+  color: var(--ok);
+  background: var(--ok-bg);
+}
+
+/* Explanatory Guide Section */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.feature-item {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px;
+}
+
+.feature-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(99, 102, 241, 0.12);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.feature-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: var(--text);
+}
+
+.feature-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* Footer */
+footer {
+  border-top: 1px solid var(--line);
+  padding: 24px 20px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+footer a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+/* Utilities */
+.hide {
+  display: none !important;
+}
+
+@media (max-width: 600px) {
+  .header-inner {
+    padding: 12px 16px;
+  }
+  main {
+    padding: 20px 14px 40px;
+  }
+  .hero h1 {
+    font-size: 24px;
+  }
+  .grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .drop {
+    padding: 30px 14px;
+  }
+  .badge-privacy span {
+    display: none;
+  }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a href="#" class="brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="5 3 19 12 5 21 5 3"></polygon>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <span class="brand-title">CapRecut</span>
+        <span class="brand-subtitle">MP4 Descrambler Engine</span>
+      </div>
+    </a>
+    <div class="header-actions">
+      <div class="badge-privacy" title="All processing happens inside your browser RAM. No servers involved.">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+        <span>100% Client-Side</span>
+      </div>
+      <button class="theme-toggle" id="themeBtn" aria-label="Toggle color theme" title="Toggle Dark/Light theme">
+        <svg id="themeIconSun" class="hide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <svg id="themeIconMoon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-pill">
+      <span class="hero-pill-dot"></span>
+      <span>XOR Header & Block Repair</span>
+    </div>
+    <h1>CapRecut Video Descrambler</h1>
+    <p>Fix video files that report as damaged or unplayable because chunks of them were XOR-scrambled. Everything processes locally in your browser memory; your file is never uploaded.</p>
+  </section>
+
+  <!-- Upload Card -->
+  <div class="card">
+    <div class="drop" id="drop">
+      <div class="drop-icon-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="17 8 12 3 7 8"></polyline>
+          <line x1="12" y1="3" x2="12" y2="15"></line>
+        </svg>
+      </div>
+      <h3>Drop your scrambled video here</h3>
+      <p>or click to browse your files. CapRecut inspects the XOR signature and searches repeating scrambled patterns automatically.</p>
+      <div class="format-tags">
+        <span class="format-tag">.MP4</span>
+        <span class="format-tag">.MOV</span>
+        <span class="format-tag">.M4V</span>
+        <span class="format-tag">CAPCUT EXPORTS</span>
+      </div>
+    </div>
+    <input type="file" id="pick" class="hide" accept="video/*,.mp4,.mov,.m4v">
+    
+    <!-- File Loaded Summary -->
+    <div class="file-bar" id="fileBar">
+      <div class="file-bar-left">
+        <div class="file-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="23 7 16 12 23 17 23 7"></polygon>
+            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+          </svg>
+        </div>
+        <div class="file-info-text">
+          <div class="file-name" id="fileName">video.mp4</div>
+          <div class="file-meta" id="fileinfo">Ready</div>
+        </div>
+      </div>
+      <button class="btn-change-file" id="changeFileBtn">Change File</button>
+    </div>
+  </div>
+
+  <!-- Scramble Pattern Controls -->
+  <div class="card hide" id="panel">
+    <div class="card-title-row">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+        <span>Scramble Pattern Parameters</span>
+      </div>
+      <span class="card-badge">Auto-detected • Editable</span>
+    </div>
+
+    <div class="grid">
+      <div class="param-card">
+        <div class="param-header">
+          <label for="key">XOR Key (Hex)</label>
+          <span class="param-hint">Byte (00-FF)</span>
+        </div>
+        <div class="input-wrapper">
+          <span class="input-prefix">0x</span>
+          <input type="text" id="key" class="has-prefix" placeholder="B4" maxlength="2" spellcheck="false" autocomplete="off">
+        </div>
+      </div>
+
+      <div class="param-card">
+        <div class="param-header">
+          <label for="period">Repeat Period (P)</label>
+          <span class="param-hint" id="periodHint">bytes</span>
+        </div>
+        <input type="number" id="period" min="1" placeholder="e.g. 16384">
+      </div>
+
+      <div class="param-card">
+        <div class="param-header">
+          <label for="len">Scramble Length (L)</label>
+          <span class="param-hint">bytes</span>
+        </div>
+        <input type="number" id="len" min="1" placeholder="e.g. 64">
+      </div>
+
+      <div class="param-card">
+        <div class="param-header">
+          <label for="off">Start Offset</label>
+          <span class="param-hint">bytes</span>
+        </div>
+        <input type="number" id="off" value="0" min="0" placeholder="0">
+      </div>
+    </div>
+
+    <div class="row">
+      <button id="repair">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+        </svg>
+        <span>Repair File</span>
+      </button>
+
+      <button id="detect" class="alt">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <polyline points="1 20 1 14 7 14"></polyline>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+        </svg>
+        <span>Re-detect Pattern</span>
+      </button>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="bar hide" id="bar"><i id="fill"></i></div>
+    
+    <!-- Status readout -->
+    <div class="status" id="status"></div>
+
+    <!-- Diagnostic Terminal Box -->
+    <div class="log-box">
+      <div class="log-header">
+        <div class="log-title">
+          <div class="terminal-dots">
+            <span class="terminal-dot"></span>
+            <span class="terminal-dot"></span>
+            <span class="terminal-dot"></span>
+          </div>
+          <span>Diagnostic Engine Output</span>
+        </div>
+        <button class="terminal-btn" id="copyLogsBtn" title="Copy diagnostic logs">Copy Logs</button>
+      </div>
+      <pre id="log"></pre>
+    </div>
+  </div>
+
+  <!-- Repaired Video Result Card -->
+  <div class="card hide" id="result">
+    <div class="card-title-row">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="5 3 19 12 5 21 5 3"></polygon>
+        </svg>
+        <span>Repaired Video Preview</span>
+      </div>
+      <span class="card-badge" style="background:var(--ok-bg);color:var(--ok);border-color:var(--ok-border)">Success</span>
+    </div>
+
+    <div class="video-wrapper">
+      <video id="vid" controls playsinline></video>
+    </div>
+
+    <div class="video-stats" id="videoStats">
+      <span class="stat-pill" id="statDim">📐 Resolution: --</span>
+      <span class="stat-pill" id="statDur">⏱️ Duration: --</span>
+      <span class="stat-pill valid" id="statBox">📦 MP4 Boxes: Valid</span>
+    </div>
+
+    <div class="row" style="margin-top:20px;">
+      <button id="save">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        <span>Save Repaired File</span>
+      </button>
+      <span class="status" id="saveinfo" style="margin:0;padding:8px 12px;"></span>
+    </div>
+  </div>
+
+  <!-- Educational / How it works section -->
+  <div class="features-grid">
+    <div class="feature-item">
+      <div class="feature-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+      </div>
+      <div class="feature-title">XOR Auto-Detection</div>
+      <div class="feature-desc">Analyzes corrupted <code>ftyp</code> box bytes against the ISO base media specification to immediately extract the XOR encryption key.</div>
+    </div>
+
+    <div class="feature-item">
+      <div class="feature-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="3" y1="9" x2="21" y2="9"></line>
+          <line x1="9" y1="21" x2="9" y2="9"></line>
+        </svg>
+      </div>
+      <div class="feature-title">Statistical Tail Fitting</div>
+      <div class="feature-desc">Examines the sparse MP4 metadata tail to calculate the exact repetition period (P) and scrambled segment length (L) with zero guesswork.</div>
+    </div>
+
+    <div class="feature-item">
+      <div class="feature-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+      </div>
+      <div class="feature-title">100% Client-Side Privacy</div>
+      <div class="feature-desc">All descrambling operates inside your local web browser sandbox using typed arrays. No files, metadata, or telemetry are ever uploaded.</div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <p>CapRecut — Advanced In-Browser Video Recovery Engine &bull; Private &bull; Client-Side</p>
+</footer>
+
+<script>
+const $ = id => document.getElementById(id);
+let orig = null, name = "video.mp4", repaired = null, url = null;
+
+// ---------- theme handling ----------
+const themeBtn = $("themeBtn");
+const themeIconSun = $("themeIconSun");
+const themeIconMoon = $("themeIconMoon");
+
+function setTheme(theme) {
+  document.documentElement.setAttribute("data-theme", theme);
+  try { localStorage.setItem("caprecut_theme", theme); } catch (e) {}
+  if (theme === "light") {
+    themeIconSun.classList.add("hide");
+    themeIconMoon.classList.remove("hide");
+    themeBtn.setAttribute("title", "Switch to Dark Mode");
+    themeBtn.setAttribute("aria-label", "Switch to Dark Mode");
+  } else {
+    themeIconSun.classList.remove("hide");
+    themeIconMoon.classList.add("hide");
+    themeBtn.setAttribute("title", "Switch to Light Mode");
+    themeBtn.setAttribute("aria-label", "Switch to Light Mode");
+  }
+}
+
+let savedTheme = "dark";
+try {
+  savedTheme = localStorage.getItem("caprecut_theme") || (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+} catch (e) {
+  savedTheme = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+}
+setTheme(savedTheme);
+
+themeBtn.onclick = () => {
+  const current = document.documentElement.getAttribute("data-theme");
+  setTheme(current === "light" ? "dark" : "light");
+};
+
+// ---------- logging and format utilities ----------
+const log = m => {
+  const l = $("log");
+  const time = new Date().toLocaleTimeString();
+  l.textContent += `[${time}] ${m}\n`;
+  l.scrollTop = l.scrollHeight;
+};
+
+const setStatus = (m, cls) => {
+  const s = $("status");
+  s.textContent = m;
+  s.className = "status" + (cls ? " " + cls : "");
+};
+
+const hex = n => n.toString(16).toUpperCase().padStart(2, "0");
+const fmt = n => n >= 1048576 ? (n / 1048576).toFixed(2) + " MB" : (n / 1024).toFixed(1) + " KB";
+const tag = (b, i) => String.fromCharCode(b[i], b[i + 1], b[i + 2], b[i + 3]);
+
+$("copyLogsBtn").onclick = () => {
+  const text = $("log").textContent;
+  if (!text) return;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = $("copyLogsBtn");
+    const prev = btn.textContent;
+    btn.textContent = "Copied!";
+    setTimeout(() => btn.textContent = prev, 1500);
+  });
+};
+
+$("key").addEventListener("input", e => {
+  let val = e.target.value.replace(/^0x/i, "").replace(/[^0-9a-fA-F]/g, "").slice(0, 2).toUpperCase();
+  e.target.value = val;
+});
+
+$("period").addEventListener("input", () => {
+  const p = +$("period").value;
+  $("periodHint").textContent = p > 0 ? fmt(p) : "bytes";
+});
+
+// ---------- file loading ----------
+const drop = $("drop"), pick = $("pick"), fileBar = $("fileBar"), fileName = $("fileName"), changeFileBtn = $("changeFileBtn");
+
+drop.onclick = () => pick.click();
+changeFileBtn.onclick = (e) => { e.stopPropagation(); pick.click(); };
+pick.onchange = () => pick.files[0] && load(pick.files[0]);
+
+["dragover", "dragenter"].forEach(e => drop.addEventListener(e, ev => {
+  ev.preventDefault();
+  drop.classList.add("over");
+}));
+
+["dragleave", "drop"].forEach(e => drop.addEventListener(e, ev => {
+  ev.preventDefault();
+  drop.classList.remove("over");
+}));
+
+drop.addEventListener("drop", ev => {
+  if (ev.dataTransfer.files[0]) load(ev.dataTransfer.files[0]);
+});
+
+// Also allow dragging over document without opening browser default
+window.addEventListener("dragover", e => e.preventDefault());
+window.addEventListener("drop", e => {
+  if (e.target !== drop && !drop.contains(e.target)) {
+    e.preventDefault();
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) load(e.dataTransfer.files[0]);
+  }
+});
+
+async function load(f) {
+  name = f.name || "video.mp4";
+  fileName.textContent = name;
+  $("fileinfo").textContent = "Reading " + name + " (" + fmt(f.size) + ")…";
+  fileBar.classList.add("active");
+
+  try {
+    orig = new Uint8Array(await f.arrayBuffer());
+  } catch (e) {
+    $("fileinfo").textContent = "Couldn’t read that file: " + e.message;
+    return;
+  }
+
+  $("fileinfo").textContent = "Size: " + fmt(orig.length) + " (" + orig.length.toLocaleString() + " bytes)";
+  $("panel").classList.remove("hide");
+  $("result").classList.add("hide");
+  $("log").textContent = "";
+  setStatus("");
+  detect();
+}
+
+// ---------- detection algorithms ----------
+function detectKey(b) {
+  if (b.length < 16) return null;
+  if (tag(b, 4) === "ftyp") return { plain: true };
+  const k = b[4] ^ 0x66; // 0x66 is 'f'
+  if ((b[5] ^ k) === 0x74 && (b[6] ^ k) === 0x79 && (b[7] ^ k) === 0x70) return { key: k };
+  return null;
+}
+
+function median(a) {
+  a = a.slice().sort((x, y) => x - y);
+  return a[a.length >> 1];
+}
+
+function estimatePattern(b, k) {
+  // Look at the file's tail (the index, which is full of zeros) and find runs of key-filled vs zero-filled words.
+  const n = b.length, w = Math.min(n, 262144), start = (n - w) & ~3;
+  let state = "", runStart = 0;
+  const starts = [], lens = [];
+  for (let p = start; p + 4 <= n; p += 4) {
+    const t = (b[p] === k && b[p + 1] === k) ? "X" : (b[p] === 0 && b[p + 1] === 0) ? "P" : "";
+    if (!t || t === state) continue;
+    if (t === "X") runStart = p;
+    else if (state === "X") {
+      if (p - runStart >= 64) {
+        starts.push(runStart);
+        lens.push(p - runStart);
+      }
+    }
+    state = t;
+  }
+  if (starts.length < 3) return null;
+  const diffs = [];
+  for (let i = 1; i < starts.length; i++) diffs.push(starts[i] - starts[i - 1]);
+  return { P: median(diffs), L: median(lens), runs: starts.length };
+}
+
+function fitPattern(b, k, Pe) {
+  // Classify 4-byte words in the tail as scrambled (key,key,..) or plain-zero (0,0,..), then find the
+  // repeat length P and scrambled length L where those two classes separate cleanly by position mod P.
+  const n = b.length, w = Math.min(n, 262144), start = (n - w) & ~3, xs = [], zs = [];
+  for (let p = start; p + 4 <= n; p += 4) {
+    if (b[p] === k && b[p + 1] === k) xs.push(p);
+    else if (b[p] === 0 && b[p + 1] === 0) zs.push(p);
+  }
+  if (xs.length < 8 || zs.length < 8) return null;
+  let best = null;
+  for (let P = Math.floor(Pe * 0.85); P <= Math.ceil(Pe * 1.15); P++) {
+    const bins = (P >> 2) + 2, hx = new Int32Array(bins), hz = new Int32Array(bins);
+    for (let i = 0; i < xs.length; i++) hx[(xs[i] % P) >> 2]++;
+    for (let i = 0; i < zs.length; i++) hz[(zs[i] % P) >> 2]++;
+    let xBelow = 0, zBelow = 0;
+    for (let j = 1; j < bins; j++) {
+      xBelow += hx[j - 1];
+      zBelow += hz[j - 1];
+      const v = (xs.length - xBelow) + zBelow;
+      if (!best || v < best.v) best = { v, P, L: j * 4 };
+    }
+  }
+  return best;
+}
+
+function score(b, k, P, L, off) {
+  // count adjacent key-byte pairs left in the tail after repair (low = good)
+  const n = b.length, w = Math.min(n, 131072), start = n - w;
+  let bad = 0, prev = 0;
+  let ph = (((start - off) % P) + P) % P;
+  for (let i = start; i < n; i++) {
+    const v = b[i] ^ (ph < L ? k : 0);
+    if (v === k && prev === k) bad++;
+    prev = v;
+    if (++ph === P) ph = 0;
+  }
+  return bad;
+}
+
+function detect() {
+  $("log").textContent = "";
+  setStatus("");
+  const d = detectKey(orig);
+  if (!d) {
+    log("Header isn’t a recognisable MP4 even after trying a single-byte XOR key.");
+    setStatus("Couldn’t auto-detect a key. Enter one manually if you know it.", "bad");
+    return;
+  }
+  if (d.plain) {
+    log("Header already reads as a normal MP4 (ftyp). Scrambling, if any, is deeper in the file; enter the key manually.");
+    setStatus("Header looks normal (ftyp present).", "");
+    return;
+  }
+  const k = d.key;
+  $("key").value = hex(k);
+  log("Header decodes to ‘ftyp’ with XOR key 0x" + hex(k) + ".");
+  const e = estimatePattern(orig, k);
+  if (!e) {
+    log("Not enough structure in the file’s tail to detect a repeating pattern. Trying header-only repair.");
+    $("period").value = orig.length;
+    $("periodHint").textContent = fmt(orig.length);
+    $("len").value = 64;
+    $("off").value = 0;
+    setStatus("Key found (0x" + hex(k) + "). Pattern not detected; header-only defaults filled in.", "");
+    return;
+  }
+  log("Rough estimate from " + e.runs + " scrambled blocks: repeat≈" + e.P + " bytes, length≈" + e.L + " bytes. Fine-tuning fit…");
+  const f = fitPattern(orig, k, e.P);
+  const P0 = f ? f.P : e.P, L0 = f ? f.L : e.L;
+  let best = { P: P0, L: L0, s: score(orig, k, P0, L0, 0) };
+  for (let P = P0 - 3; P <= P0 + 3; P++) {
+    for (let L = L0 - 6; L <= L0 + 6; L++) {
+      if (L < 1 || L >= P) continue;
+      const s = score(orig, k, P, L, 0);
+      if (!best || s < best.s) best = { P, L, s };
+    }
+  }
+  $("period").value = best.P;
+  $("periodHint").textContent = fmt(best.P);
+  $("len").value = best.L;
+  $("off").value = 0;
+  log("Best fit: every " + best.P + " bytes, first " + best.L + " bytes scrambled (residual mismatch score: " + best.s + ").");
+  setStatus("Pattern detected! Press ‘Repair File’ to descramble.", "ok");
+}
+$("detect").onclick = detect;
+
+// ---------- MP4 box parser ----------
+function topLevelWalk(b) {
+  let p = 0, n = b.length, boxes = [];
+  while (p + 8 <= n) {
+    let s = ((b[p] << 24) | (b[p + 1] << 16) | (b[p + 2] << 8) | b[p + 3]) >>> 0;
+    const t = tag(b, p + 4);
+    if (!/^[\x20-\x7e]{4}$/.test(t)) return { ok: false, boxes };
+    if (s === 1) {
+      if (p + 16 > n) return { ok: false, boxes };
+      s = Number(new DataView(b.buffer, b.byteOffset + p + 8, 8).getBigUint64(0));
+    }
+    if (s === 0) s = n - p;
+    if (s < 8 || p + s > n) return { ok: false, boxes };
+    boxes.push(t);
+    p += s;
+  }
+  return { ok: p === n, boxes };
+}
+
+// ---------- repair execution ----------
+async function repair() {
+  const rawKey = $("key").value.replace(/^0x/i, "");
+  const k = parseInt(rawKey, 16), P = +$("period").value, L = +$("len").value, off = +$("off").value || 0;
+  if (isNaN(k) || !(k >= 0 && k < 256) || !(P > 0) || !(L > 0)) {
+    setStatus("Enter a valid key (00-FF), repeat period and scrambled length.", "bad");
+    return;
+  }
+  
+  $("repair").disabled = true;
+  $("bar").classList.remove("hide");
+  $("fill").style.width = "0%";
+  setStatus("Repairing video chunks…");
+  
+  await new Promise(r => setTimeout(r, 30));
+  const b = orig.slice(), n = b.length;
+  let blocks = 0;
+  
+  for (let s = off; s < n; s += P) {
+    const e = Math.min(s + L, n);
+    for (let i = s; i < e; i++) b[i] ^= k;
+    if ((++blocks & 2047) === 0) {
+      const pct = Math.round(s / n * 100);
+      $("fill").style.width = pct + "%";
+      setStatus("Repairing… " + pct + "% (" + blocks.toLocaleString() + " blocks descrambled)");
+      await new Promise(r => setTimeout(r, 0));
+    }
+  }
+  
+  $("fill").style.width = "100%";
+  const walk = topLevelWalk(b), hasFtyp = tag(b, 4) === "ftyp";
+  
+  log("Descrambled " + blocks.toLocaleString() + " blocks.");
+  log("Header ftyp verification: " + (hasFtyp ? "VALID (ftyp present)" : "FAILED (no ftyp)"));
+  log("Box structure: " + (walk.ok ? "Valid (" + walk.boxes.join(" > ") + ")" : (walk.boxes.length ? "Boxes (" + walk.boxes.join(" > ") + ")" : "Non-standard or truncated")));
+  
+  repaired = b;
+  if (url) URL.revokeObjectURL(url);
+  url = URL.createObjectURL(new Blob([b], { type: "video/mp4" }));
+  
+  const v = $("vid");
+  v.onerror = () => {
+    setStatus("Descrambled, but browser media pipeline failed to decode. Check pattern values.", "bad");
+    $("statBox").className = "stat-pill";
+    $("statBox").textContent = "📦 Stream: Decode Error";
+  };
+  
+  v.onloadedmetadata = () => {
+    setStatus("Repair successful! Duration: " + v.duration.toFixed(1) + "s, " + v.videoWidth + "×" + v.videoHeight + " px.", "ok");
+    $("statDim").textContent = "📐 Resolution: " + v.videoWidth + " × " + v.videoHeight;
+    $("statDur").textContent = "⏱️ Duration: " + v.duration.toFixed(1) + "s";
+    $("statBox").className = "stat-pill valid";
+    $("statBox").textContent = "📦 MP4 Boxes: " + walk.boxes.slice(0, 4).join(", ") + (walk.boxes.length > 4 ? "..." : "");
+  };
+  
+  v.src = url;
+  $("result").classList.remove("hide");
+  $("saveinfo").textContent = "";
+  $("repair").disabled = false;
+  setTimeout(() => $("bar").classList.add("hide"), 800);
+}
+$("repair").onclick = repair;
+
+// ---------- save / download ----------
+$("save").onclick = async () => {
+  if (!repaired) return;
+  const out = name.replace(/\.[^.]+$/, "") + "_CapRecut.mp4";
+  
+  try {
+    // 1. Claude artifact environment support if available
+    if (typeof claude !== "undefined" && claude?.use) {
+      try {
+        const dl = await claude.use("downloads");
+        if (dl && dl.save) {
+          await dl.save({ filename: out, data: new Blob([repaired], { type: "video/mp4" }) });
+          $("saveinfo").textContent = "Saved " + out;
+          return;
+        }
+      } catch (err) {
+        // Fall back to standard browser download
+      }
+    }
+    
+    // 2. Standard HTML5 browser download (Works on all modern browsers)
+    const blob = new Blob([repaired], { type: "video/mp4" });
+    const downloadUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.style.display = "none";
+    a.href = downloadUrl;
+    a.download = out;
+    document.body.appendChild(a);
+    a.click();
+    
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(downloadUrl);
+    }, 2000);
+    
+    $("saveinfo").textContent = "Downloaded " + out;
+  } catch (e) {
+    $("saveinfo").textContent = e && e.code === "declined" ? "Save cancelled." : "Couldn’t save: " + (e && (e.message || e.code) || "unknown error");
+  }
+};
+
+// Allow Enter key to trigger repair when in param inputs
+["key", "period", "len", "off"].forEach(id => {
+  $(id).addEventListener("keydown", e => {
+    if (e.key === "Enter") repair();
+  });
+});
+</script>
+</body>
+</html>

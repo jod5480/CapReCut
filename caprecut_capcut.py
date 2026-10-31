@@ -476,7 +476,9 @@ def main():
             cmd_repair_file(argparse.Namespace(file=fpath, output=None, key=None, period=None, length=None, offset=0, in_place=False))
         elif choice == "5":
             import webbrowser
-            html_path = os.path.join(os.path.dirname(__file__), "CapRecut.html")
+            html_path = os.path.join(os.path.dirname(__file__), "index.html")
+            if not os.path.exists(html_path):
+                html_path = os.path.join(os.path.dirname(__file__), "CapRecut.html")
             if not os.path.exists(html_path):
                 html_path = r"c:\Users\syamm\Downloads\CapRecut.html"
             webbrowser.open(f"file:///{os.path.abspath(html_path)}")
